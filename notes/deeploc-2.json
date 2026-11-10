@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "slug": "deeploc-2",
+  "title": "DeepLoc 2.0：从蛋白质序列到多标签亚细胞定位",
+  "subtitle": "Multi-label subcellular localization prediction using protein language models",
+  "year": 2022,
+  "category": "蛋白质定位",
+  "tags": [
+    "蛋白语言模型",
+    "亚细胞定位",
+    "多标签分类"
+  ],
+  "updated": "2026-11-11",
+  "status": "imported",
+  "source": {
+    "url": "https://doi.org/10.1093/nar/gkac278",
+    "citation": "Thumuluri V, Almagro Armenteros JJ, Johansen AR, Nielsen H, Winther O. Nucleic Acids Research, 2022, 50(W1): W228–W234. DOI: 10.1093/nar/gkac278."
+  },
+  "summary": "DeepLoc 2.0 将预训练蛋白质语言模型与多标签预测结合，仅用序列预测多个亚细胞定位，并通过注意力和分选信号预测提供辅助解释线索。",
+  "coverage": "本篇由用户提供的双语批注 HTML 迁移，保留其 19 个论证单元与 7 个章节；不是对原论文的完整重新精读。英文为旧笔记中的 AI 改写，不是原文引句。旧模板重排过章节，原文小节覆盖、表格数值和补充材料仍待逐项核对。",
+  "sections": [
+    {
+      "id": "abstract",
+      "title": "摘要",
+      "originalHeading": "01 · Abstract｜摘要",
+      "sourceLocation": "附件中的 01 · Abstract｜摘要；原文具体段落位置待复核",
+      "blocks": [
+        {
+          "heading": "研究问题：定位预测需要从单标签走向多标签",
+          "explanation": "蛋白质亚细胞定位是功能注释的重要组成部分，但真实生物学中的蛋白并不总是只存在于一个细胞区室。因此，本文关注的核心问题是：能否仅依据蛋白质序列，同时预测其可能对应的多个亚细胞定位，而不是将其强制归入单一类别？这一任务既关系到蛋白质组学研究，也有助于理解蛋白质功能。",
+          "englishParaphrase": "Protein localization is central to functional annotation, yet a protein may occupy more than one cellular compartment. The paper addresses the need for a predictor that can assign multiple subcellular locations from sequence information, rather than forcing every protein into a single destination. The authors position this task as relevant to proteomics and to the interpretation of cellular function.",
+          "analysis": "逻辑角色全文论证的起点：先说明研究对象具有多定位属性，再建立单标签预测与生物现实之间的错位。\n\n论证技巧 / 潜在漏洞作者以生物学真实性作为任务升级的理由，逻辑自然。但“多定位”并非所有蛋白都具有；模型需要处理标签稀疏、定位共现和注释不完整等问题，不能把多标签能力等同于每个预测都可靠。"
+        },
+        {
+          "heading": "核心方案：预训练蛋白语言模型 + 可解释预测",
+          "explanation": "DeepLoc 2.0 将预训练蛋白质语言模型、多标签分类和解释性分析整合到同一框架中。作者构建了经过严格同源性划分的真核生物及人类定位数据集，并整理了九类具有实验依据的蛋白质分选信号。模型不仅输出定位标签，还提供序列位置层面的注意力信息和分选信号预测，试图把“预测到哪里”与“序列中哪些区域可能参与定位”联系起来。",
+          "englishParaphrase": "DeepLoc 2.0 combines a pre-trained protein language model with multi-label prediction and an interpretation layer. Its evidence base includes curated eukaryotic and human localization datasets with stringent homology partitioning, together with experimentally supported annotations of nine sorting-signal types. The model also exposes residue-level attention and predicts sorting signals, aiming to connect a location label with sequence regions that may help explain it.",
+          "analysis": "逻辑角色给出全文的中心主张，并预告后文的三组证据：数据集设计、预测性能、可解释性。\n\n论证技巧 / 潜在漏洞作者把性能和解释性并列为贡献，避免只强调准确率。不过“attention 与 sorting signals 对应”只能支持一定程度的解释性，不能直接证明注意力就是模型的因果依据。",
+          "figures": [
+            {
+              "path": "assets/images/deeploc-2/graphical-abstract.jpg",
+              "alt": "DeepLoc 2.0 图文摘要：蛋白质语言模型、注意力池化与两个多标签预测任务",
+              "caption": "Graphical Abstract。图像沿用论文原图，未改动。Thumuluri et al., Nucleic Acids Research (2022). 图示模型输入与预测任务，不能单凭此图判断性能。",
+              "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9252801/",
+              "license": "CC BY 4.0，Thumuluri et al. (2022)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intro",
+      "title": "引言",
+      "originalHeading": "02 · Introduction｜引言",
+      "sourceLocation": "附件中的 02 · Introduction｜引言；原文具体段落位置待复核",
+      "blocks": [
+        {
+          "heading": "生物学背景：定位由分选信号等机制决定",
+          "explanation": "亚细胞定位信息能够辅助蛋白质功能注释、药物靶点发现，也与蛋白质错误定位相关疾病的研究密切相关。蛋白质分选信号是参与细胞内运输与定位的短序列特征。考虑到同一蛋白可能分布于多个区室，定位任务更适合被建模为一组可同时成立的标签，而不是彼此排斥的单分类问题。",
+          "englishParaphrase": "Subcellular localization contributes to functional annotation, can inform drug-target discovery, and is relevant to diseases associated with abnormal protein trafficking. Sorting signals are short sequence patterns involved in directing proteins to cellular destinations. Because a protein can be present in multiple compartments, localization is better represented as a set of labels than as a single mutually exclusive class.",
+          "analysis": "逻辑角色为多标签预测提供领域层面的必要性，并引入后续解释模块所依赖的 sorting signals。\n\n论证技巧 / 潜在漏洞“分选信号”充当序列与定位之间的机制桥梁。但定位还受细胞类型、状态、翻译后修饰和动态运输影响；序列并不能穷尽所有上下文信息。"
+        },
+        {
+          "heading": "已有方法：输入特征和输出标签各有局限",
+          "explanation": "已有工具在输入信息和预测目标上各有侧重：YLoc+ 利用分选信号、PROSITE 模式等生物学特征，并可选用 GO 信息；FUEL-mLoc 主要依赖 GO 派生特征。DeepLoc 1.0 和 LAProtT5 则采用序列驱动的深度学习方案，但本文将它们作为单定位预测方法进行比较。由此形成本文试图填补的空白：在仅使用序列信息的前提下，实现多定位预测，并尽可能保留可解释性。",
+          "englishParaphrase": "Earlier tools occupy different points in the design space. YLoc+ supports multiple locations using biological features such as sorting signals and PROSITE patterns, with optional Gene Ontology terms; FUEL-mLoc relies on GO-derived information. By contrast, DeepLoc 1.0 and LAProtT5 are sequence-driven deep-learning approaches but were framed as single-location predictors in this comparison. The gap is a sequence-based model that supports multiple locations while retaining useful interpretability.",
+          "analysis": "逻辑角色从领域背景转入方法学问题：不是简单声称旧方法不好，而是指出多标签、序列输入与解释性尚未被充分整合。\n\n论证技巧 / 潜在漏洞比较维度清晰，但不同工具的输入信息、训练数据和输出标签并不完全一致。后续基准比较需要谨慎解读，不能把所有差异都归因于模型架构。"
+        },
+        {
+          "heading": "本文方案：在 DeepLoc 三阶段框架上更新关键环节",
+          "explanation": "DeepLoc 1.0 已经采用“残基特征提取—注意力池化—分类预测”的三阶段流程。DeepLoc 2.0 保留这一总体框架，但对三个关键部分进行升级：构建经过同源性控制的多定位数据集；使用预训练蛋白质 Transformer 生成残基表示；同时预测多个亚细胞定位标签和分选信号类别。此外，作者通过监督信息与正则化设计，提升注意力分布的可读性。",
+          "englishParaphrase": "DeepLoc 1.0 already follows a three-stage pipeline: residue-level feature extraction, attention-based pooling, and classification. DeepLoc 2.0 preserves this high-level template but changes three components: curated multi-location datasets with homology-aware splits, pre-trained protein transformer representations, and multi-label heads for both localization and sorting-signal prediction. Supervised regularization is also used to make the attention profile more informative.",
+          "analysis": "逻辑角色是引言到方法部分的桥梁：明确后续实验分别要检验数据、表征、输出和解释层。\n\n论证技巧 / 潜在漏洞模块化描述让贡献容易追踪。但“更可解释”需要独立证据，不应仅由注意力可视化或增加辅助任务自动推出。"
+        }
+      ]
+    },
+    {
+      "id": "webserver",
+      "title": "工具使用边界",
+      "originalHeading": "03 · Webserver｜工具使用边界",
+      "sourceLocation": "附件中的 03 · Webserver｜工具使用边界；原文具体段落位置待复核",
+      "blocks": [
+        {
+          "heading": "服务可访问性与预测解释的边界",
+          "explanation": "在线服务支持免登录提交，每次最多输入 500 条 FASTA 序列，并返回定位与分选信号的预测分数；在详细结果模式下，还能查看残基层面的注意力分布。不过，模型对任意输入序列都会给出结果，作者明确提醒：若输入并非真核生物蛋白，预测是否合理并不容易判断。注意力图更适合作为定位线索；若需要精确分析信号肽或靶向肽，应进一步使用 SignalP、TargetP 等专门工具。",
+          "englishParaphrase": "The web server accepts up to 500 FASTA sequences per submission and does not require login. It reports localization and sorting-signal scores, and can display residue-level attention profiles. However, the system returns predictions for arbitrary inputs, while the authors caution that predictions are difficult to judge for non-eukaryotic proteins. The attention plot is presented as a guide; specialized tools such as SignalP or TargetP are recommended when detailed signal characterization is required.",
+          "analysis": "逻辑角色补充工具落地信息，并为论文结论加上适用条件：模型主要围绕真核蛋白定位数据构建。\n\n论证技巧 / 潜在漏洞这是作者较明确的限制声明。用户界面能输出分数不等于模型对任意物种都经过验证；“attention 高值”也不能直接当作确定的信号边界。"
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "title": "数据集构建",
+      "originalHeading": "04 · Data｜数据集构建",
+      "sourceLocation": "附件中的 04 · Data｜数据集构建；原文具体段落位置待复核",
+      "blocks": [
+        {
+          "heading": "三类数据：交叉验证、独立测试与信号标注",
+          "explanation": "研究整合了三类相互关联的数据资源：用于五折交叉验证的 Swiss-Prot 亚细胞定位数据集；用于独立评估的 Human Protein Atlas（HPA）人类蛋白定位数据集；以及包含实验支持的分选信号类型及其序列位置的辅助数据集。这样的设计既将模型开发与外部人类蛋白测试区分开来，也为解释性分析提供了信号级标注。",
+          "englishParaphrase": "The study assembles three related resources: a Swiss-Prot localization dataset for five-fold cross-validation, a Human Protein Atlas (HPA) dataset for independent evaluation, and a sorting-signal dataset containing experimentally supported signal types and sequence positions. This design separates model development from an external human-protein test and adds signal annotations for interpretability.",
+          "analysis": "逻辑角色支撑后文性能评估与解释性评估的证据基础。\n\n论证技巧 / 潜在漏洞多来源数据增强了评估层次。但辅助信号数据并非完全独立于定位训练数据，且不同来源的标注标准与覆盖度可能不一致。"
+        },
+        {
+          "heading": "Swiss-Prot：严格筛选并允许多标签",
+          "explanation": "定位数据取自 UniProt 2021_03 版本。作者仅保留真核生物蛋白、非片段序列、核基因编码且长度超过 40 个氨基酸的条目，并要求定位注释具有实验依据（ECO:0000269）。每条蛋白可以对应十类细胞区室中的一个或多个类别；随后再按照序列同源性进行划分，用于五折交叉验证。",
+          "englishParaphrase": "The localization records are derived from UniProt release 2021_03. The authors retain eukaryotic, non-fragment proteins encoded in the nucleus, longer than 40 amino acids, with experimentally annotated localization evidence (ECO:0000269). Each protein can map to one or more of ten compartments, and the resulting dataset is used for five-fold cross-validation after homology-based partitioning.",
+          "analysis": "逻辑角色为模型在内部数据上的泛化能力提供较可信的估计，尤其是降低高度相似序列跨折出现的风险。\n\n论证技巧 / 潜在漏洞实验注释提高标签可信度，但也可能引入研究偏好与类别不均衡。严格同源性划分能减少近缘泄漏，却不等于消除了所有功能或家族层面的相关性。"
+        },
+        {
+          "heading": "HPA：独立的人类蛋白测试集",
+          "explanation": "独立测试集来自 HPA 项目基于共聚焦显微成像获得的人类蛋白亚细胞定位注释。为减少低可信标签的干扰，作者只保留 Enhanced 和 Supported 两个可靠性等级。同时，HPA 测试序列与 Swiss-Prot 定位数据集之间的全局序列一致性被限制在 30% 以下，以降低测试集与训练数据之间的近缘重叠。",
+          "englishParaphrase": "The independent benchmark is drawn from HPA subcellular annotations based on confocal microscopy. To favor higher-confidence labels, the authors retain only the Enhanced and Supported reliability categories. They also enforce a sequence-identity filter so that no test sequence has more than 30% global identity to the Swiss-Prot localization set.",
+          "analysis": "逻辑角色这是全文最重要的泛化证据之一：模型不只在训练数据的交叉验证中表现良好，也接受不同来源人类蛋白数据的检验。\n\n论证技巧 / 潜在漏洞HPA 是独立来源，但测试对象仍集中于人类蛋白；其结果不能直接外推到所有真核物种、原核生物或不同细胞状态。"
+        },
+        {
+          "heading": "Sorting-signal 数据：为解释性提供监督信息",
+          "explanation": "分选信号数据主要从文献中收集经过实验验证的注释，同时记录信号是否存在及其在蛋白序列中的位置，共涉及九类信号。作者将其限定在已经纳入 Swiss-Prot 定位数据集的蛋白范围内。因此，这套数据适合作为辅助监督资源，帮助模型学习与定位相关的序列区域，但不能视为完全独立的外部测试集。",
+          "englishParaphrase": "The signal dataset collects experimentally verified annotations, mainly from the literature, and records both signal presence and its location in the sequence. It covers nine signal categories and is restricted to proteins already present in the curated Swiss-Prot localization dataset. Consequently, it is a useful auxiliary resource, but not a fully independent external benchmark.",
+          "analysis": "逻辑角色为注意力学习提供额外监督，使模型的序列关注区域有机会与已知定位信号对齐。\n\n论证技巧 / 潜在漏洞辅助任务能增加可解释性约束，但信号注释来源于有限文献，覆盖度和定位边界可能不完整；同一蛋白进入定位与信号数据，也意味着两类证据并非独立。"
+        }
+      ]
+    },
+    {
+      "id": "method",
+      "title": "模型方法",
+      "originalHeading": "05 · DeepLoc 2.0 Overview｜模型方法",
+      "sourceLocation": "附件中的 05 · DeepLoc 2.0 Overview｜模型方法；原文具体段落位置待复核",
+      "blocks": [
+        {
+          "heading": "蛋白质语言模型：把氨基酸序列编码为上下文表示",
+          "explanation": "作者采用在大规模无标签蛋白质序列上预训练的 Transformer 语言模型，其预训练目标为掩码语言建模。论文比较了三个不同规模的模型：84M 参数的 ESM12、650M 参数的 ESM1b，以及 3B 参数的 ProtT5-XL-UniRef50。每个模型都会为序列中的每个氨基酸残基生成上下文相关向量，使下游任务能够利用大规模序列预训练中学到的表示，而不再仅依赖人工构造的序列特征或 profile。",
+          "englishParaphrase": "The authors use transformer language models pre-trained on large unlabeled protein sequence collections with a masked-language-modeling objective. They evaluate three scales: ESM12 (84M parameters), ESM1b (650M), and ProtT5-XL-UniRef50 (3B). Each model produces a contextual vector for every amino-acid residue, allowing the downstream predictor to use information learned from large-scale sequence data rather than handcrafted profiles alone.",
+          "analysis": "逻辑角色方法链第一环：解释模型如何从原始序列得到每个残基的向量表示。\n\n论证技巧 / 潜在漏洞多尺度比较让作者能检验模型规模与下游性能的关系。但参数规模、预训练语料、架构和训练目标同时变化，不能仅凭结果断言“规模越大越好”。"
+        },
+        {
+          "heading": "Attention pooling：从残基向量得到整条蛋白表示",
+          "explanation": "模型通过一个可学习向量与每个残基表示做点积，得到残基级分数；随后使用宽度为 5 的一维高斯滤波器平滑分数，再经 softmax 归一化为注意力权重。整条蛋白的表示由所有残基向量按注意力权重加权求和得到。注意力向量同时接受定位标签与分选信号注释的监督，作者希望由此使模型关注的高权重区域更具生物学意义。",
+          "englishParaphrase": "A learnable vector scores each residue representation through a dot product. The scores are smoothed with a one-dimensional Gaussian filter of width five, then normalized by softmax to form attention weights. The protein-level representation is the weighted sum of residue embeddings. The attention vector is supervised using localization labels and sorting-signal annotations, with the intention that high-weight regions become more biologically informative.",
+          "analysis": "逻辑角色方法链第二环：连接语言模型输出与分类器输入，同时构成后续可视化的基础。\n\n论证技巧 / 潜在漏洞高斯平滑体现了信号通常连续分布于相邻残基的先验。需要注意，attention 权重是模型内部的加权机制；即便经过监督，也不自动等于因果解释或精确的功能位点定位。"
+        },
+        {
+          "heading": "双预测头：定位与分选信号分阶段训练",
+          "explanation": "模型在池化后的蛋白表示上设置两个 MLP 预测头：第一个预测十类亚细胞定位，可同时输出多个标签，并与注意力向量共同训练；第二个预测九类分选信号，在前一阶段完成后冻结其余参数再训练。作者指出两个任务同时优化较为困难，因此采用顺序训练。每个标签独立输出概率；训练时使用加权 focal loss 缓解类别不平衡，并通过最大化训练集上的 MCC 为各标签分别确定阈值。",
+          "englishParaphrase": "Two MLP heads operate on the pooled representation. One predicts multiple labels across ten subcellular locations and is trained together with the learnable attention vector. The other predicts nine sorting-signal types and is trained subsequently while the remaining parameters are frozen. The authors report that simultaneous optimization of both tasks was difficult, so they use sequential training. Each label receives an independent probability; weighted focal loss addresses label imbalance, and class-specific thresholds are selected by maximizing MCC on training data.",
+          "analysis": "逻辑角色说明模型如何把“定位预测”和“信号识别”组合为两个有关联但不完全同步优化的任务。\n\n论证技巧 / 潜在漏洞作者坦诚报告联合训练困难，体现方法选择来自实验观察。但顺序训练可能限制两个任务之间的端到端协同；逐类阈值在训练集上调优，也需要防范阈值选择对泛化性能的影响。"
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "title": "结果与讨论",
+      "originalHeading": "06 · Results and Discussion｜结果与讨论",
+      "sourceLocation": "附件中的 06 · Results and Discussion｜结果与讨论；原文具体段落位置待复核",
+      "blocks": [
+        {
+          "heading": "比较设计：统一定位类别后进行基准评估",
+          "explanation": "作者选择 YLoc+、DeepLoc 1.0、FUEL-mLoc 和 LAProtT5 作为比较对象。由于各工具的标签空间与输出形式不同，研究者将其预测结果映射到 DeepLoc 2.0 使用的十类定位体系；同时，从 FUEL-mLoc 数据库中移除约 2% 与测试集高度相似的同源序列，以尽可能保证比较公平。这些处理提升了可比性，但不同工具在输入信息和任务设定上仍不完全一致。",
+          "englishParaphrase": "The benchmark includes YLoc+, DeepLoc 1.0, FUEL-mLoc, and LAProtT5. Since these tools use different label spaces and output formats, their predictions are mapped to the ten categories used by DeepLoc 2.0. The authors also reduce the FUEL-mLoc database by about 2% to remove close homologs to the test set. These adjustments aim to make the comparison more consistent, although the tools are not identical in input information or prediction setup.",
+          "analysis": "逻辑角色为“优于已有方法”的主张设定比较框架，避免直接比较不可对齐的原始输出。\n\n论证技巧 / 潜在漏洞统一标签有助于评估，但标签映射会损失细粒度信息。基线工具的训练数据、输入特征和标签数不同，因此比较更适合视为实用基准，而非严格控制变量实验。"
+        },
+        {
+          "heading": "Swiss-Prot 交叉验证：多标签性能全面提升",
+          "explanation": "在包含 28,303 条蛋白的 Swiss-Prot 五折交叉验证中，真实蛋白平均具有 1.27 个定位标签。DeepLoc 2.0 的 ESM1b 与 ProtT5 两个版本在论文报告的总体指标上均优于所列基线。ProtT5 的 Micro-F1 达到 0.73、Macro-F1 达到 0.66，而重新训练的 DeepLoc 1.0 分别为 0.58 和 0.47；ProtT5 的 Jaccard 为 0.69、准确率为 0.55。模型预测的平均标签数也接近数据中的真实水平。",
+          "englishParaphrase": "On the Swiss-Prot cross-validation set (28,303 proteins; mean observed labels per protein = 1.27), both DeepLoc 2.0 variants outperform the listed baselines across the reported aggregate metrics. ProtT5 reaches 0.73 Micro-F1 and 0.66 Macro-F1, compared with 0.58 and 0.47 for retrained DeepLoc 1.0. Its Jaccard score is 0.69 and accuracy is 0.55. The model also predicts approximately the observed number of labels per protein.",
+          "analysis": "逻辑角色全文第一组关键实证：证明新模型在内部、同源性划分后的多标签任务上优于比较方法。\n\n论证技巧 / 潜在漏洞同时报告 Micro-F1、Macro-F1、Jaccard 和标签数，比单一 accuracy 更有说服力。仍需注意类别级别差异：溶酶体/液泡、Golgi 和过氧化物酶体等类别明显更难，整体均值可能掩盖长尾表现。"
+        },
+        {
+          "heading": "HPA 独立测试：优势存在，但并非所有指标都领先",
+          "explanation": "在包含 1,717 条人类蛋白的 HPA 独立测试集中，真实蛋白平均对应 1.22 个定位标签。DeepLoc 2.0 的 ProtT5 版本取得 0.60 的 Micro-F1、0.46 的 Macro-F1 和 0.53 的 Jaccard，在多个总体指标上表现突出。但它并非在所有指标上都排名第一：LAProtT5 的总体准确率更高（0.45 对 0.39），核定位 MCC 也最高；内质网定位 MCC 则由 DeepLoc 1.0 取得最佳结果。因此，外部测试支持 DeepLoc 2.0 具有较强的泛化竞争力，却不能据此宣称其在所有类别和指标上全面占优。",
+          "englishParaphrase": "On the independent HPA benchmark (1,717 human proteins; mean observed labels = 1.22), the ProtT5 version achieves 0.60 Micro-F1, 0.46 Macro-F1, and 0.53 Jaccard. It performs strongly on several metrics, but it does not lead every comparison: LAProtT5 has higher overall accuracy (0.45 versus 0.39) and the best nuclear MCC, while DeepLoc 1.0 has the highest endoplasmic-reticulum MCC. Thus the external test supports competitive generalization, not universal dominance.",
+          "analysis": "逻辑角色这是对交叉验证结果的关键补强，也构成全文最重要的限定：优势是多指标、总体性的，而非所有类别无条件领先。\n\n论证技巧 / 潜在漏洞作者没有回避 LAProtT5 和 DeepLoc 1.0 的局部优势，增强了结果报告的可信度。另一方面，HPA 只覆盖人类蛋白，且主文表格呈现的类别有限，外部有效性范围仍需谨慎界定。"
+        },
+        {
+          "heading": "分选信号识别：总体较好，信号类别间差异明显",
+          "explanation": "在九类分选信号预测任务中，DeepLoc 2.0 的准确率约为 79%，Micro-F1 为 0.87、Macro-F1 为 0.80。线粒体转运肽和信号肽的识别效果较好，而核输出信号是最难预测的类别之一，其 MCC 约为 0.46–0.49。作者同时强调，该模型不能替代专门工具对信号边界进行精确定位；若要确定信号的具体长度和边界，仍应使用 SignalP、TargetP 等工具。",
+          "englishParaphrase": "For the nine sorting-signal categories, DeepLoc 2.0 obtains approximately 79% accuracy, with Micro-F1 of 0.87 and Macro-F1 of 0.80. Performance is high for mitochondrial transit peptides and signal peptides, whereas nuclear export signals are the most difficult category (MCC around 0.46–0.49). The model does not replace specialist tools for exact signal-boundary determination; the authors recommend tools such as SignalP and TargetP for that purpose.",
+          "analysis": "逻辑角色回答“模型是否真的学到与定位相关的信号类型”，为注意力解释性分析提供第二条证据。\n\n论证技巧 / 潜在漏洞总体分数较高，但不同信号类别表现差距大。与专用工具的对照也存在训练集重叠风险：作者指出部分序列可能进入专用预测器训练集，而 DeepLoc 2.0 的分数来自交叉验证，比较条件并不完全对称。"
+        },
+        {
+          "heading": "Attention–signal 对齐：解释性提升，但仍有难点",
+          "explanation": "作者使用 Kullback–Leibler（KL）散度比较模型注意力分布与已注释分选信号位置之间的差异；数值越低，表示两种分布越接近。相较 DeepLoc 1.0，DeepLoc 2.0 在多数信号类型上的对齐程度有所改善，其中过氧化物酶体靶向信号的提升尤其明显。不过，核定位信号和核输出信号仍然较难处理，且不同模型版本在核输出信号上的对齐表现并未稳定改善。因此，注意力可以提供有价值的线索，但还不能被视为对所有分选信号都忠实、精确的定位图。",
+          "englishParaphrase": "The authors compare attention profiles with annotated sorting-signal positions using Kullback–Leibler divergence, where lower values indicate closer distributions. DeepLoc 2.0 improves alignment for most signal types relative to DeepLoc 1.0; the improvement is especially marked for peroxisomal targeting signals. However, nuclear localization and nuclear export signals remain difficult, and the NES alignment is not consistently improved across model variants. Attention therefore provides a useful clue, but not a uniformly faithful map of every signal.",
+          "analysis": "逻辑角色这是解释性主张的关键证据：不只展示 attention 图，还用 KL 散度衡量其与已知信号位置的一致程度。\n\n论证技巧 / 潜在漏洞量化对齐优于主观展示。但 attention 与信号注释相似，不代表模型决策完全由该信号驱动；NLS、NES 的 KL 值仍偏高，提示解释能力并不均衡。"
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "结论",
+      "originalHeading": "07 · Conclusion｜结论",
+      "sourceLocation": "附件中的 07 · Conclusion｜结论；原文具体段落位置待复核",
+      "blocks": [
+        {
+          "heading": "结论：仅用序列实现多定位预测，并增加信号层面的解释线索",
+          "explanation": "作者最终将 DeepLoc 2.0 定位为一种仅依赖蛋白质序列、基于蛋白质语言模型的多标签亚细胞定位预测工具。经过整理的多定位数据集为其预测性能提供了支撑，而分选信号辅助注释则增强了注意力分布的可解释性。模型因此能够同时给出定位预测和潜在相关序列区域的线索；若需要更精确的分选信号分析，专门预测工具仍具有补充价值。",
+          "englishParaphrase": "DeepLoc 2.0 is presented as a protein-language-model-based tool for multi-label subcellular localization using sequence input alone. The curated multi-location dataset supports its predictive performance, while the auxiliary sorting-signal annotations improve the interpretability of attention profiles. The system therefore returns both location predictions and clues about relevant sequence regions, with specialist predictors remaining useful for more precise signal analysis.",
+          "analysis": "逻辑角色闭合全文论证链：多定位生物学需求 → 语言模型与多标签架构 → 内部及外部证据 → 信号监督与注意力对齐 → 工具结论。\n\n论证技巧 / 潜在漏洞结论基本与实验结果相符，但“outperforms existing methods”应理解为在多个总体指标上领先，而不是所有类别全面胜出。更稳妥的定位是：高性能的序列级多标签工具，并提供辅助解释线索。"
+        }
+      ]
+    }
+  ],
+  "assessment": "以下评议沿用附件，尚未独立核对：内部同源性控制与独立 HPA 测试提供不同层面的预测证据；总体指标优势不能外推为每个定位类别均占优。\n\n注意力与信号位置对齐可作为解释线索，不能直接等同于因果解释。需要继续核查长尾类别的表现、基准比较条件以及各模型组件的独立贡献。"
+}
