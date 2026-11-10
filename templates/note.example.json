@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "slug": "example-paper",
-  "title": "格式示例：DeepLoc 2.0 的研究问题",
-  "subtitle": "Multi-label subcellular localization prediction using protein language models",
+  "title": "双语批注格式示例：DeepLoc 2.0 摘要",
+  "subtitle": "DeepLoc 2.0: multi-label subcellular localization prediction using protein language models",
   "year": 2022,
   "category": "蛋白质定位",
   "tags": [
@@ -14,31 +14,56 @@
   "status": "draft",
   "source": {
     "url": "https://doi.org/10.1093/nar/gkac278",
-    "citation": "Thumuluri V, Almagro Armenteros JJ, Johansen AR, Nielsen H, Winther O. Nucleic Acids Research, 2022, 50(W1): W228–W234. DOI: 10.1093/nar/gkac278."
+    "citation": "Thumuluri V, Almagro Armenteros JJ, Johansen AR, Nielsen H, Winther O. Nucleic Acids Research, 2022, 50(W1): W228–W234. DOI: 10.1093/nar/gkac278.",
+    "license": "英文及论文表格：© The Author(s) 2022，CC BY 4.0；Thumuluri et al., Nucleic Acids Research, 50(W1), W228–W234，doi:10.1093/nar/gkac278。中文翻译、讲解和高亮由 AI 辅助制作，属于改编阅读材料。"
   },
   "summary": "DeepLoc 2.0 将预训练蛋白质语言模型与多标签预测结合，仅用序列预测多个亚细胞定位，并通过注意力和分选信号预测提供辅助解释线索。",
-  "coverage": "本文件仅展示数据格式，不是完整论文笔记。",
+  "coverage": "本文件仅用于展示格式，仅含原文摘要。",
+  "course": "学术论文精读 · 论证结构与逻辑分析",
+  "argumentMap": {
+    "problem": "同一蛋白可以分布于多个区室；已有工具在多标签、输入信息与解释性之间各有取舍。",
+    "thesis": "整合蛋白质语言模型、监督注意力和多标签预测，仅用序列同时给出定位与信号类型。",
+    "evidence": "同源性控制的 SwissProt 交叉验证、HPA 独立测试、九类信号分类、注意力—信号位置的 KL 对齐比较。",
+    "rebuttal": "HPA 的准确率及部分定位指标未全面领先；NES 分类和对齐困难；专用工具比较存在潜在训练集重叠；注意力线索不是因果证明。",
+    "conclusion": "在所列数据与评估条件下获得较强的多标签预测表现，并提供辅助理解序列区域的线索，适用边界需保留。",
+    "claim": "DeepLoc 2.0 利用预训练蛋白质表征、多定位数据和分选信号监督，在仅用序列的条件下增强多标签定位预测，并提供信号类别与注意力解释线索。",
+    "strongest": "验证不止依赖训练数据内部表现：同源性划分后的多指标交叉验证，还由来源不同且限制序列相似性的人类 HPA 测试补强，表格主动报告基线胜出的例外。",
+    "weakest": "解释性证据主要证明注意力与已注释信号位置更一致，尚未证明其对预测决策的因果忠实度；NES 对齐也未在所有变体中改善，因而解释性总体主张需要限定。"
+  },
   "sections": [
     {
       "id": "abstract",
       "title": "摘要",
-      "originalHeading": "01 · Abstract｜摘要",
-      "sourceLocation": "附件中的 01 · Abstract｜摘要；原文具体段落位置待复核",
+      "originalHeading": "Abstract",
+      "sourceLocation": "原文摘要",
       "blocks": [
         {
-          "heading": "研究问题：定位预测需要从单标签走向多标签",
-          "explanation": "蛋白质亚细胞定位是功能注释的重要组成部分，但真实生物学中的蛋白并不总是只存在于一个细胞区室。因此，本文关注的核心问题是：能否仅依据蛋白质序列，同时预测其可能对应的多个亚细胞定位，而不是将其强制归入单一类别？这一任务既关系到蛋白质组学研究，也有助于理解蛋白质功能。",
-          "englishParaphrase": "Protein localization is central to functional annotation, yet a protein may occupy more than one cellular compartment. The paper addresses the need for a predictor that can assign multiple subcellular locations from sequence information, rather than forcing every protein into a single destination. The authors position this task as relevant to proteomics and to the interpretation of cellular function.",
-          "analysis": "逻辑角色全文论证的起点：先说明研究对象具有多定位属性，再建立单标签预测与生物现实之间的错位。\n\n论证技巧 / 潜在漏洞作者以生物学真实性作为任务升级的理由，逻辑自然。但“多定位”并非所有蛋白都具有；模型需要处理标签稀疏、定位共现和注释不完整等问题，不能把多标签能力等同于每个预测都可靠。"
-        },
-        {
-          "heading": "核心方案：预训练蛋白语言模型 + 可解释预测",
-          "explanation": "DeepLoc 2.0 将预训练蛋白质语言模型、多标签分类和解释性分析整合到同一框架中。作者构建了经过严格同源性划分的真核生物及人类定位数据集，并整理了九类具有实验依据的蛋白质分选信号。模型不仅输出定位标签，还提供序列位置层面的注意力信息和分选信号预测，试图把“预测到哪里”与“序列中哪些区域可能参与定位”联系起来。",
-          "englishParaphrase": "DeepLoc 2.0 combines a pre-trained protein language model with multi-label prediction and an interpretation layer. Its evidence base includes curated eukaryotic and human localization datasets with stringent homology partitioning, together with experimentally supported annotations of nine sorting-signal types. The model also exposes residue-level attention and predicts sorting signals, aiming to connect a location label with sequence regions that may help explain it.",
-          "analysis": "逻辑角色给出全文的中心主张，并预告后文的三组证据：数据集设计、预测性能、可解释性。\n\n论证技巧 / 潜在漏洞作者把性能和解释性并列为贡献，避免只强调准确率。不过“attention 与 sorting signals 对应”只能支持一定程度的解释性，不能直接证明注意力就是模型的因果依据。"
+          "heading": "摘要：任务、性能与可解释性三条主张",
+          "english": "The prediction of protein subcellular localization is of great relevance for proteomics research. Here, we propose an update to the popular tool DeepLoc with multi-localization prediction and improvements in both performance and interpretability. For training and validation, we curate eukaryotic and human multi-location protein datasets with stringent homology partitioning and enriched with sorting signal information compiled from the literature. We achieve state-of-the-art performance in DeepLoc 2.0 by using a pre-trained protein language model. It has the further advantage that it uses sequence input rather than relying on slower protein profiles. We provide two means of better interpretability: an attention output along the sequence and highly accurate prediction of nine different types of protein sorting signals. We find that the attention output correlates well with the position of sorting signals. The webserver is available at services.healthtech.dtu.dk/service.php?DeepLoc-2.0.",
+          "translation": "预测蛋白质的亚细胞定位对蛋白质组学研究具有重要意义。本文对广泛使用的 DeepLoc 工具进行更新，使其能够预测多个定位，并提升预测性能与可解释性。为训练和验证模型，我们整理了真核生物与人类蛋白的多定位数据集，采用严格的同源性划分，并补充了从文献汇集的分选信号信息。借助预训练蛋白质语言模型，DeepLoc 2.0 达到了当时领先的预测性能。它还有一个优势：直接使用序列作为输入，无须依赖计算较慢的蛋白质序列谱。我们通过两种方式改善解释性：沿序列输出注意力，以及较准确地预测九类蛋白质分选信号。我们发现，注意力输出与分选信号的位置具有较好的相关性。在线服务地址为 services.healthtech.dtu.dk/service.php?DeepLoc-2.0。",
+          "explanation": "摘要提出的不是一个单一“更准”的结论，而是三个需要分别检验的承诺：多标签定位是否更贴近任务，预测性能是否提高，注意力和分选信号能否帮助理解输出。多标签意味着同一条蛋白可以同时获得多个定位类别；序列谱则通常需要额外的同源序列信息，不能与直接输入单条序列混为一谈。后文应分别寻找数据划分、性能表和注意力对齐的证据。",
+          "sourceLocation": "Abstract · 原文第 1 段",
+          "annotation": {
+            "function": "概括研究问题、方案与贡献",
+            "role": "全篇的论点总纲，预告数据、模型性能与解释性三条证据线。",
+            "critique": "作者将可解释性与性能并列，避免只以一个分数定义进步；但“相关性”不等于因果机制，摘要的领先性主张也需要用后续具体指标限定。"
+          },
+          "highlights": [
+            {
+              "kind": "thesis",
+              "text": "Here, we propose an update to the popular tool DeepLoc with multi-localization prediction and improvements in both performance and interpretability."
+            },
+            {
+              "kind": "term",
+              "text": "sorting signals"
+            },
+            {
+              "kind": "term",
+              "text": "protein language model"
+            }
+          ]
         }
       ]
     }
-  ],
-  "assessment": "以下评议沿用附件，尚未独立核对：内部同源性控制与独立 HPA 测试提供不同层面的预测证据；总体指标优势不能外推为每个定位类别均占优。\n\n注意力与信号位置对齐可作为解释线索，不能直接等同于因果解释。需要继续核查长尾类别的表现、基准比较条件以及各模型组件的独立贡献。"
+  ]
 }

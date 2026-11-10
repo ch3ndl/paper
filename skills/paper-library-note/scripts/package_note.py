@@ -10,6 +10,25 @@ def package(root, slug, output):
     root=Path(root).resolve();output=Path(output).resolve()
     if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*',slug):raise ValueError('Invalid slug')
     path=root/'notes'/f'{slug}.json';n=json.loads(path.read_text(encoding='utf-8'))
+    if n.get('schemaVersion')==2:
+        from validate_note import validate
+        from render_note import render_html
+        validate(n,root)
+        html_path=root/'html'/f'{slug}.html';html_path.parent.mkdir(exist_ok=True)
+        html_path.write_text(render_html(n,root),encoding='utf-8')
+        files={path,html_path}
+        for s in n['sections']:
+            for b in s['blocks']:
+                for f in b.get('figures',[]):
+                    image=(root/f['path']).resolve();data=image.read_bytes()
+                    if not(data.startswith(b'\x89PNG\r\n\x1a\n') or data.startswith(b'\xff\xd8\xff') or (data.startswith(b'RIFF') and data[8:12]==b'WEBP')):raise ValueError('Invalid image bytes')
+                    files.add(image)
+        if len(files)>100 or any(p.stat().st_size>12*1024*1024 for p in files) or sum(p.stat().st_size for p in files)>29*1024*1024:raise ValueError('Export exceeds upload limit')
+        output.parent.mkdir(parents=True,exist_ok=True)
+        with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_STORED) as z:
+            for p in sorted(files):z.write(p,p.relative_to(root).as_posix())
+        print(f'Validated bilingual note, standalone HTML and {len(files)-2} images: {output}')
+        return output
     if n.get('schemaVersion')!=1 or n.get('slug')!=slug:raise ValueError('Schema version or slug mismatch')
     for k in ('title','summary','category','coverage'):
         if not isinstance(n.get(k),str) or not n[k].strip():raise ValueError('Missing '+k)

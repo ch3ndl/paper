@@ -1,4 +1,4 @@
 interface:
   display_name: "论文精读与网站导出"
-  short_description: "沿原文章节详细讲解论文、核对图表与证据，导出可上传论文库的文件包"
-  default_prompt: "使用 $paper-library-note 按原文章节顺序详细精读这篇论文，生成带分类、标签与本地图片的 Saline Papers 文件包。"
+  short_description: "制作英文原文与中文译文对照、五色高亮和逐段批注的双栏HTML及网站上传包"
+  default_prompt: "使用 $paper-library-note 将这篇论文按原文顺序制作成英文原文、中文译文与逐段详细批注的完整双栏 HTML，并导出 Saline Papers 上传包。"

@@ -1,16 +1,20 @@
 """Build the paper library, using only Python's standard library."""
-import html, json, re, shutil
+import html, json, re, shutil, sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / '_site'
+sys.path.insert(0,str(ROOT/'skills/paper-library-note/scripts'))
+from validate_note import validate as validate_bilingual
+from render_note import render_html
 def esc(s): return html.escape(str(s), quote=True)
 def paras(s): return ''.join('<p>'+esc(p).replace('\n','<br>')+'</p>' for p in s.split('\n\n') if p.strip())
 def url(s):
     if urlsplit(s).scheme not in ('https', 'http'): raise ValueError('来源链接必须是 http(s) URL')
     return esc(s)
 def validate(n, root=ROOT):
+    if n.get('schemaVersion') == 2: return validate_bilingual(n,root)
     if n.get('schemaVersion') != 1: raise ValueError('仅支持 schemaVersion 1')
     for k in ('slug','title','summary','category','year','updated','source','coverage','sections','tags'):
         if k not in n: raise ValueError('缺少字段 '+k)
@@ -52,6 +56,7 @@ def shell(title, body, prefix='./', active='', extra=''):
     return f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Saline 的论文精读与研究笔记"><title>{esc(title)} · Saline Papers</title><link rel="stylesheet" href="{prefix}assets/site.css"><script defer src="{prefix}assets/site.js"></script>{extra}</head><body><a class="skip" href="#main">跳到内容</a><header class="site-header"><a class="brand" href="{prefix}index.html"><span class="brand-icon">S.</span><span>SALINE <b>PAPERS</b><small>论文与研究笔记</small></span></a><nav aria-label="站点导航">{nav}<a href="https://github.com/ch3ndl/paper" target="_blank" rel="noopener">GitHub ↗</a></nav></header>{body}<footer class="site-footer"><span>SALINE PAPERS <i> / </i> 让阅读留下线索。</span><span>AI 辅助整理 · 以原文证据为准 <a href="{prefix}guide.html">关于本站 ↗</a></span></footer><dialog id="image-dialog"><button type="button" id="close-image">关闭 ×</button><img alt=""><p></p></dialog></body></html>'''
 
 def article(n):
+    if n.get('schemaVersion') == 2: return render_html(n,ROOT,embedded=False,site_prefix='../')
     toc='<a href="#overview">阅读概览</a>'+''.join(f'<a href="#{esc(s["id"])}">{i:02d} {esc(s["title"])}</a>' for i,s in enumerate(n['sections'],1))+'<a href="#assessment">综合评议</a>'
     sections=''
     for i,s in enumerate(n['sections'],1):
@@ -85,7 +90,11 @@ def build():
     (OUT/'templates').mkdir(exist_ok=True)
     shutil.copy2(ROOT/'templates/note.example.json',OUT/'templates/note.example.json')
     (OUT/'papers').mkdir(exist_ok=True)
-    for n in notes: (OUT/'papers'/f'{n["slug"]}.html').write_text(article(n),encoding='utf-8')
+    (OUT/'downloads').mkdir(exist_ok=True)
+    for n in notes:
+        (OUT/'papers'/f'{n["slug"]}.html').write_text(article(n),encoding='utf-8')
+        if n.get('schemaVersion') == 2:
+            (OUT/'downloads'/f'{n["slug"]}.html').write_text(render_html(n,ROOT),encoding='utf-8')
     cards=''
     for n in sorted(notes,key=lambda x:x['updated'],reverse=True):
         tags=''.join('<span>'+esc(t)+'</span>' for t in n['tags'])
