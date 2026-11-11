@@ -8,6 +8,8 @@ def check_url(u):
 
 def package(root, slug, output):
     root=Path(root).resolve();output=Path(output).resolve()
+    submission=output if output.suffix.lower()!='.zip' else None
+    if submission is not None:output=submission/'result.zip'
     if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*',slug):raise ValueError('Invalid slug')
     path=root/'notes'/f'{slug}.json';n=json.loads(path.read_text(encoding='utf-8'))
     if n.get('schemaVersion')==2:
@@ -27,6 +29,9 @@ def package(root, slug, output):
         output.parent.mkdir(parents=True,exist_ok=True)
         with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_STORED) as z:
             for p in sorted(files):z.write(p,p.relative_to(root).as_posix())
+        if submission is not None:
+            from repository_layout import write_submission
+            write_submission(n,output,submission)
         print(f'Validated bilingual note, standalone HTML and {len(files)-2} images: {output}')
         return output
     if n.get('schemaVersion')!=1 or n.get('slug')!=slug:raise ValueError('Schema version or slug mismatch')

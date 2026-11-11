@@ -1,5 +1,5 @@
 """Build the paper library, using only Python's standard library."""
-import html, json, re, shutil, sys
+import html, json, re, shutil, sys, tempfile
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -8,6 +8,7 @@ OUT = ROOT / '_site'
 sys.path.insert(0,str(ROOT/'skills/paper-library-note/scripts'))
 from validate_note import validate as validate_bilingual
 from render_note import render_html
+from repository_layout import load_library
 def esc(s): return html.escape(str(s), quote=True)
 def paras(s): return ''.join('<p>'+esc(p).replace('\n','<br>')+'</p>' for p in s.split('\n\n') if p.strip())
 def url(s):
@@ -52,11 +53,11 @@ def validate(n, root=ROOT):
     return n
 
 def shell(title, body, prefix='./', active='', extra=''):
-    nav=''.join(f'<a {"aria-current=page" if active==key else ""} href="{prefix}{target}">{label}</a>' for key,target,label in [('library','index.html','论文库'),('guide','guide.html','阅读与发布'),('admin','admin.html','管理')])
+    nav=''.join(f'<a {"aria-current=page" if active==key else ""} href="{prefix}{target}">{label}</a>' for key,target,label in [('library','index.html','论文库'),('guide','guide.html','阅读与发布')])
     return f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Saline 的论文精读与研究笔记"><title>{esc(title)} · Saline Papers</title><link rel="stylesheet" href="{prefix}assets/site.css"><script defer src="{prefix}assets/site.js"></script>{extra}</head><body><a class="skip" href="#main">跳到内容</a><header class="site-header"><a class="brand" href="{prefix}index.html"><span class="brand-icon">S.</span><span>SALINE <b>PAPERS</b><small>论文与研究笔记</small></span></a><nav aria-label="站点导航">{nav}<a href="https://github.com/ch3ndl/paper" target="_blank" rel="noopener">GitHub ↗</a></nav></header>{body}<footer class="site-footer"><span>SALINE PAPERS <i> / </i> 让阅读留下线索。</span><span>AI 辅助整理 · 以原文证据为准 <a href="{prefix}guide.html">关于本站 ↗</a></span></footer><dialog id="image-dialog"><button type="button" id="close-image">关闭 ×</button><img alt=""><p></p></dialog></body></html>'''
 
-def article(n):
-    if n.get('schemaVersion') == 2: return render_html(n,ROOT,embedded=False,site_prefix='../')
+def article(n,asset_root=ROOT):
+    if n.get('schemaVersion') == 2: return render_html(n,asset_root,embedded=False,site_prefix='../')
     toc='<a href="#overview">阅读概览</a>'+''.join(f'<a href="#{esc(s["id"])}">{i:02d} {esc(s["title"])}</a>' for i,s in enumerate(n['sections'],1))+'<a href="#assessment">综合评议</a>'
     sections=''
     for i,s in enumerate(n['sections'],1):
@@ -76,42 +77,44 @@ def article(n):
     return shell(n['title'],body,'../','library')
 
 def build():
-    notes=[]
-    for p in sorted((ROOT/'notes').glob('*.json')):
-        n=validate(json.loads(p.read_text(encoding='utf-8')))
-        if p.stem!=n['slug']: raise ValueError('文件名必须与 slug 一致：'+p.name)
-        notes.append(n)
+    staging=tempfile.TemporaryDirectory(prefix='saline-papers-')
+    asset_root=Path(staging.name)
+    notes=load_library(ROOT/'library',asset_root)
     if OUT.exists():
         if OUT.resolve().parent != ROOT.resolve() or OUT.name != '_site': raise ValueError('Invalid output directory')
         shutil.rmtree(OUT)
     OUT.mkdir(exist_ok=True)
-    for folder in ('assets','notes','skills'):
+    for folder in ('assets','skills'):
         if (ROOT/folder).exists(): shutil.copytree(ROOT/folder,OUT/folder,dirs_exist_ok=True,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+    if (asset_root/'assets').exists():shutil.copytree(asset_root/'assets',OUT/'assets',dirs_exist_ok=True)
+    (OUT/'notes').mkdir(exist_ok=True)
+    for n in notes:(OUT/'notes'/f'{n["slug"]}.json').write_text(json.dumps(n,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     (OUT/'templates').mkdir(exist_ok=True)
     shutil.copy2(ROOT/'templates/note.example.json',OUT/'templates/note.example.json')
     (OUT/'papers').mkdir(exist_ok=True)
     (OUT/'downloads').mkdir(exist_ok=True)
     for n in notes:
-        (OUT/'papers'/f'{n["slug"]}.html').write_text(article(n),encoding='utf-8')
+        (OUT/'papers'/f'{n["slug"]}.html').write_text(article(n,asset_root),encoding='utf-8')
         if n.get('schemaVersion') == 2:
-            (OUT/'downloads'/f'{n["slug"]}.html').write_text(render_html(n,ROOT),encoding='utf-8')
+            (OUT/'downloads'/f'{n["slug"]}.html').write_text(render_html(n,asset_root),encoding='utf-8')
     cards=''
     for n in sorted(notes,key=lambda x:x['updated'],reverse=True):
         tags=''.join('<span>'+esc(t)+'</span>' for t in n['tags'])
         cards+=f'''<article class="paper-card" data-title="{esc(n['title']+' '+n.get('subtitle','')+' '+n['summary']+' '+' '.join(n['tags']))}" data-category="{esc(n['category'])}" data-tags="{esc(json.dumps(n['tags'],ensure_ascii=False))}" data-year="{n['year']}" data-updated="{esc(n['updated'])}" data-slug="{esc(n['slug'])}"><div class="card-top"><span>{esc(n['category'])}</span><span>{n['year']} · {'待核对' if n.get('status')!='reviewed' else '已核对'}</span></div><h2><a href="papers/{esc(n['slug'])}.html">{esc(n['title'])} <span>↗</span></a></h2><p>{esc(n['summary'])}</p><div class="tag-list">{tags}</div><div class="card-bottom"><span>{len(n['sections'])} 个章节 · {esc(n['updated'])}</span><button class="card-bookmark" type="button" data-slug="{esc(n['slug'])}" aria-label="收藏 {esc(n['title'])}">☆</button></div></article>'''
-    cats=sorted(set(n['category'] for n in notes)); tags=sorted(set(t for n in notes for t in n['tags']))
-    filters=''.join(f'<option>{esc(c)}</option>' for c in cats)
+    cats=sorted({' / '.join(n['category'].split(' / ')[:i])for n in notes for i in range(1,len(n['category'].split(' / '))+1)}); tags=sorted(set(t for n in notes for t in n['tags']))
+    filters=''.join(f'<option value="{esc(c)}">{esc(chr(12288)*(len(c.split(" / "))-1)+c.split(" / ")[-1])}（{sum(n["category"]==c or n["category"].startswith(c+" / ")for n in notes)}）</option>' for c in cats)
     tagfilters=''.join(f'<button type="button" class="tag-filter" aria-pressed="false" data-tag="{esc(t)}">{esc(t)}</button>' for t in tags)
-    body=f'''<main id="main" class="library"><section class="library-hero"><div><div class="eyebrow">A PERSONAL RESEARCH LIBRARY</div><h1>把论文读进去，<br><em>把思考留下来。</em></h1><p>沿着原文的结构理解研究，<br>把方法、证据与自己的判断放回各自的位置。</p><a class="text-link" href="guide.html">了解笔记的阅读方式 <span>↗</span></a></div><aside class="hero-note"><span class="eyebrow">THE READING METHOD</span><div><b>01</b><p>顺着原文读<small>保留章节顺序与证据位置</small></p></div><div><b>02</b><p>对着图表想<small>从研究设计走到具体发现</small></p></div><div><b>03</b><p>带着问题走<small>分清作者结论与阅读批注</small></p></div></aside></section><section class="library-section"><div class="library-title"><h2>论文书架 <span>{len(notes):02d}</span></h2><a href="admin.html">整理新笔记 +</a></div><div class="filters"><label class="search-label"><span class="sr-only">搜索论文</span><input type="search" id="search" placeholder="搜索标题、关键词或研究问题…"></label><label><span class="sr-only">分类</span><select id="category"><option value="">全部分类</option>{filters}</select></label><label><span class="sr-only">排序</span><select id="sort"><option value="updated">最近更新</option><option value="year">发表年份</option><option value="title">标题排序</option></select></label><label class="saved-filter"><input type="checkbox" id="saved-only"> 本机收藏</label></div><div class="tag-filters"><button class="tag-filter active" id="all-tags" type="button" aria-pressed="true">全部标签</button>{tagfilters}</div><p class="result-count" aria-live="polite"></p><div class="paper-grid">{cards}</div><div id="empty" class="empty" hidden>没有找到符合条件的论文。<button id="reset" type="button">清除筛选</button></div></section></main>'''
+    body=f'''<main id="main" class="library"><section class="library-hero"><div><div class="eyebrow">A PERSONAL RESEARCH LIBRARY</div><h1>把论文读进去，<br><em>把思考留下来。</em></h1><p>沿着原文的结构理解研究，<br>把方法、证据与自己的判断放回各自的位置。</p><a class="text-link" href="guide.html">了解笔记的阅读方式 <span>↗</span></a></div><aside class="hero-note"><span class="eyebrow">THE READING METHOD</span><div><b>01</b><p>顺着原文读<small>保留章节顺序与证据位置</small></p></div><div><b>02</b><p>对着图表想<small>从研究设计走到具体发现</small></p></div><div><b>03</b><p>带着问题走<small>分清作者结论与阅读批注</small></p></div></aside></section><section class="library-section"><div class="library-title"><h2>论文书架 <span>{len(notes):02d}</span></h2><a href="https://github.com/ch3ndl/paper/tree/main/library">GitHub 管理论文 ↗</a></div><div class="filters"><label class="search-label"><span class="sr-only">搜索论文</span><input type="search" id="search" placeholder="搜索标题、关键词或研究问题…"></label><label><span class="sr-only">分类</span><select id="category"><option value="">全部分类</option>{filters}</select></label><label><span class="sr-only">排序</span><select id="sort"><option value="updated">最近更新</option><option value="year">发表年份</option><option value="title">标题排序</option></select></label><label class="saved-filter"><input type="checkbox" id="saved-only"> 本机收藏</label></div><div class="tag-filters"><button class="tag-filter active" id="all-tags" type="button" aria-pressed="true">全部标签</button>{tagfilters}</div><p class="result-count" aria-live="polite"></p><div class="paper-grid">{cards}</div><div id="empty" class="empty" hidden>没有找到符合条件的论文。<button id="reset" type="button">清除筛选</button></div></section></main>'''
     (OUT/'index.html').write_text(shell('论文库',body,active='library'),encoding='utf-8')
-    for name in ('guide','admin'):
+    for name in ('guide',):
         body=(ROOT/'templates'/f'{name}.html').read_text(encoding='utf-8')
-        extra='<script defer src="assets/admin.js"></script>' if name=='admin' else ''
-        (OUT/f'{name}.html').write_text(shell('管理论文' if name=='admin' else '阅读与发布',body,active=name,extra=extra),encoding='utf-8')
+        extra=''
+        (OUT/f'{name}.html').write_text(shell('阅读与发布',body,active=name,extra=extra),encoding='utf-8')
     catalog=[{k:n[k] for k in ('slug','title','category','tags','year','updated')} for n in notes]
     (OUT/'catalog.json').write_text(json.dumps(catalog,ensure_ascii=False),encoding='utf-8')
     (OUT/'.nojekyll').touch()
     (OUT/'404.html').write_text(shell('页面未找到','<main id="main" class="prose"><h1>这篇笔记还不在书架上。</h1><a href="https://ch3ndl.github.io/paper/">返回论文库 →</a></main>'),encoding='utf-8')
-    print(f'Built {len(notes)} notes into {OUT}')
+    staging.cleanup()
+    print(f'Built {len(notes)} paper directories into {OUT}')
 
 if __name__=='__main__': build()

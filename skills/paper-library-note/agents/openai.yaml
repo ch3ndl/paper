@@ -1,4 +1,4 @@
 interface:
   display_name: "论文精读与网站导出"
-  short_description: "制作英文原文与中文译文对照、五色高亮和逐段批注的双栏HTML及网站上传包"
-  default_prompt: "使用 $paper-library-note 将这篇论文按原文顺序制作成英文原文、中文译文与逐段详细批注的完整双栏 HTML，并导出 Saline Papers 上传包。"
+  short_description: "制作五色双语逐段精读HTML，并导出含结果包、论文简介和分类标签的GitHub论文目录"
+  default_prompt: "使用 $paper-library-note 制作这篇论文的逐段双语批注 HTML，并导出包含 result.zip、README.md 和 taxonomy.txt 的 GitHub library 论文目录。"

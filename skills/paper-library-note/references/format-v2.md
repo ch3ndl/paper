@@ -1,6 +1,28 @@
 # 双语逐段批注格式 v2
 
-输出包含 `notes/<slug>.json`、`assets/images/<slug>/` 与自动生成的 `html/<slug>.html`。JSON 使用 UTF-8，所有字段为纯文本，高亮通过精确子串元数据表达，不嵌 HTML。
+创作时使用 `notes/<slug>.json` 与 `assets/images/<slug>/`，脚本自动生成独立 HTML。最终提交使用一论文一目录：
+
+```text
+library/<slug>/
+  result.zip
+  README.md
+  taxonomy.txt
+```
+
+result.zip 内含 notes/<slug>.json、html/<slug>.html 和被引用的图片；网站只从 library 的论文子目录加载结果包。不要把包内目录散放到仓库根部。README 记录论文名、作者、简介、年份与出处。JSON 使用 UTF-8，所有字段为纯文本，高亮通过精确子串元数据表达，不嵌 HTML。
+
+taxonomy.txt 是分类标签的唯一依据，构建时覆盖 JSON 中的 category 和 tags：
+
+```text
+分类: 生物信息学 / 蛋白质定位
+
+标签:
+- 蛋白语言模型
+- 亚细胞定位
+- 多标签分类
+```
+
+分类恰好一行，不能重复；“ / ”分隔父子层级，不能包含空层级。标签逐行可自定义多个，去重后保持顺序；无标签时保留空的“标签:”栏目。修改文本文件即可移动分类或增删标签，父分类筛选会包含后代文章，不需要维护额外分类注册表。目录、包内 JSON 文件名和 slug 必须一致。删除整个论文目录即可下架。
 
 ```json
 {
@@ -8,9 +30,10 @@
   "slug": "paper-short-name",
   "title": "中文论文名",
   "subtitle": "完整英文论文名",
+  "authors": ["实际核实的作者名"],
   "course": "用户课程信息，或通用的学术论文精读栏目",
   "year": 2026,
-  "category": "研究主题",
+  "category": "一级主题 / 二级主题",
   "tags": ["方法", "对象", "任务"],
   "updated": "2026-11-11",
   "status": "draft",
@@ -76,6 +99,12 @@ slug 与文件名一致，英文小写数字和连字符；章节 id 唯一。ye
 
 可直接运行：
 ```text
-python scripts/package_note.py EXPORT_DIRECTORY SLUG OUTPUT.zip
+python scripts/package_note.py CREATION_DIRECTORY SLUG SUBMISSION_ROOT/library/SLUG
 ```
-会先校验再生成自包含 HTML 和 ZIP。单文件不超过 12 MiB，导入包整体不超过 30 MiB，最多 100 个文件。过大图片应在保持可读性的前提下压缩，不能删除关键数据面板来强行达标。
+会先校验再生成自包含 HTML 与完整论文提交目录，其中 ZIP 固定名为 result.zip。已有 taxonomy.txt 和 README 不会被自动覆盖；用户要求更新这两者时应明确编辑。单文件不超过 12 MiB，结果包整体不超过 30 MiB，最多 100 个文件。过大图片应在保持可读性的前提下压缩，不能删除关键数据面板来强行达标。
+
+目录校验示例（在 scripts 目录可导入模块）：
+```python
+from repository_layout import load_submission
+load_submission("SUBMISSION_ROOT/library/SLUG", "TEMPORARY_VALIDATION_DIRECTORY")
+```
